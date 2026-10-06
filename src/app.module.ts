@@ -3,6 +3,7 @@ import { createObserveModule } from '@nestjs/observe';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { CarsModule } from './cars/cars.module.js';
+import { DriversModule } from './drivers/drivers.module.js';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
@@ -16,6 +17,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
       serviceId: 'seidor-vehicle-api',
     }),
     CarsModule,
+    DriversModule,
   ],
   controllers: [AppController],
   providers: [AppService],
