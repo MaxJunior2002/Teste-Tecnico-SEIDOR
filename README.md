@@ -25,6 +25,22 @@
 
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
+## Cars API
+
+Car records are kept in memory and reset when the application restarts. Each car
+has a plate, color, and brand.
+
+After starting the backend, open the interactive Swagger documentation at
+`http://localhost:3000/api`.
+
+| Method   | Endpoint    | Description                                                               |
+| -------- | ----------- | ------------------------------------------------------------------------- |
+| `POST`   | `/cars`     | Create a car with `plate`, `color`, and `brand`                           |
+| `GET`    | `/cars`     | List cars; optionally filter with `color` and/or `brand` query parameters |
+| `GET`    | `/cars/:id` | Retrieve a car by its ID                                                  |
+| `PUT`    | `/cars/:id` | Replace a car's `plate`, `color`, and `brand`                             |
+| `DELETE` | `/cars/:id` | Delete a car                                                              |
+
 ## Project setup
 
 ```bash
