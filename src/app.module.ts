@@ -4,6 +4,7 @@ import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { CarsModule } from './cars/cars.module.js';
 import { DriversModule } from './drivers/drivers.module.js';
+import { UsagesModule } from './usages/usages.module.js';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
@@ -18,6 +19,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     }),
     CarsModule,
     DriversModule,
+    UsagesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
