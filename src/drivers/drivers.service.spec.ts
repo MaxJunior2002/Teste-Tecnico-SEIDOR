@@ -1,4 +1,5 @@
 import { NotFoundException } from '@nestjs/common';
+import { ActiveUsageRegistry } from '../common/active-usage-registry.js';
 import { Driver } from './driver.model.js';
 import { DriversService } from './drivers.service.js';
 
@@ -6,7 +7,7 @@ describe('DriversService', () => {
   let service: DriversService;
 
   beforeEach(() => {
-    service = new DriversService();
+    service = new DriversService(new ActiveUsageRegistry());
   });
 
   it('creates and retrieves a driver with a generated identifier', () => {

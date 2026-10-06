@@ -1,4 +1,5 @@
 import { ConflictException, NotFoundException } from '@nestjs/common';
+import { ActiveUsageRegistry } from '../common/active-usage-registry.js';
 import { Car } from './car.model.js';
 import { CarsService } from './cars.service.js';
 
@@ -6,7 +7,7 @@ describe('CarsService', () => {
   let service: CarsService;
 
   beforeEach(() => {
-    service = new CarsService();
+    service = new CarsService(new ActiveUsageRegistry());
   });
 
   it('creates and retrieves a car with a generated identifier', () => {

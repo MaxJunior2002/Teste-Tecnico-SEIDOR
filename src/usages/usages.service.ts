@@ -1,10 +1,7 @@
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { CarsService } from '../cars/cars.service.js';
+import { ActiveUsageRegistry } from '../common/active-usage-registry.js';
 import { DriversService } from '../drivers/drivers.service.js';
 import { CarUsage } from './car-usage.model.js';
 import { CreateCarUsageDto } from './dto/create-car-usage.dto.js';
@@ -17,20 +14,12 @@ export class UsagesService {
   constructor(
     private readonly carsService: CarsService,
     private readonly driversService: DriversService,
+    private readonly activeUsageRegistry: ActiveUsageRegistry,
   ) {}
 
   create(createCarUsageDto: CreateCarUsageDto): CarUsage {
     const car = this.carsService.findOne(createCarUsageDto.carId);
     const driver = this.driversService.findOne(createCarUsageDto.driverId);
-
-    if (this.isCarInUse(car.id)) {
-      throw new ConflictException(`Car with ID "${car.id}" is already in use`);
-    }
-    if (this.isDriverInUse(driver.id)) {
-      throw new ConflictException(
-        `Driver with ID "${driver.id}" is already using a car`,
-      );
-    }
 
     const usage = new CarUsage(
       randomUUID(),
@@ -39,6 +28,7 @@ export class UsagesService {
       driver,
       car,
     );
+    this.activeUsageRegistry.startUsage(car.id, driver.id);
     this.usages.set(usage.id, usage);
     return usage;
   }
@@ -64,18 +54,7 @@ export class UsagesService {
     }
 
     usage.endDate = new Date();
+    this.activeUsageRegistry.finishUsage(usage.car.id, usage.driver.id);
     return usage;
-  }
-
-  private isCarInUse(carId: string): boolean {
-    return [...this.usages.values()].some(
-      (usage) => usage.car.id === carId && usage.endDate === null,
-    );
-  }
-
-  private isDriverInUse(driverId: string): boolean {
-    return [...this.usages.values()].some(
-      (usage) => usage.driver.id === driverId && usage.endDate === null,
-    );
   }
 }

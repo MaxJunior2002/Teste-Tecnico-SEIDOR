@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
+import { ActiveUsageRegistry } from '../common/active-usage-registry.js';
 import { CreateCarDto } from './dto/create-car.dto.js';
 import { ListCarsQueryDto } from './dto/list-cars-query.dto.js';
 import { UpdateCarDto } from './dto/update-car.dto.js';
@@ -12,6 +13,8 @@ import { Car } from './car.model.js';
 @Injectable()
 export class CarsService {
   private readonly cars = new Map<string, Car>();
+
+  constructor(private readonly activeUsageRegistry: ActiveUsageRegistry) {}
 
   create(createCarDto: CreateCarDto): Car {
     this.ensurePlateIsAvailable(createCarDto.plate);
@@ -61,6 +64,11 @@ export class CarsService {
 
   remove(id: string): void {
     this.findOne(id);
+    if (this.activeUsageRegistry.isCarInUse(id)) {
+      throw new ConflictException(
+        `Cannot delete car with ID "${id}" while it is in use`,
+      );
+    }
     this.cars.delete(id);
   }
 

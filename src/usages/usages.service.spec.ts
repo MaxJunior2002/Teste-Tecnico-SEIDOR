@@ -1,5 +1,6 @@
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { CarsService } from '../cars/cars.service.js';
+import { ActiveUsageRegistry } from '../common/active-usage-registry.js';
 import { DriversService } from '../drivers/drivers.service.js';
 import { CarUsage } from './car-usage.model.js';
 import { UsagesService } from './usages.service.js';
@@ -7,12 +8,18 @@ import { UsagesService } from './usages.service.js';
 describe('UsagesService', () => {
   let carsService: CarsService;
   let driversService: DriversService;
+  let activeUsageRegistry: ActiveUsageRegistry;
   let service: UsagesService;
 
   beforeEach(() => {
-    carsService = new CarsService();
-    driversService = new DriversService();
-    service = new UsagesService(carsService, driversService);
+    activeUsageRegistry = new ActiveUsageRegistry();
+    carsService = new CarsService(activeUsageRegistry);
+    driversService = new DriversService(activeUsageRegistry);
+    service = new UsagesService(
+      carsService,
+      driversService,
+      activeUsageRegistry,
+    );
   });
 
   function createCar(plate = 'ABC-1234') {
@@ -139,6 +146,59 @@ describe('UsagesService', () => {
       service.finish({ carId: car.id, driverId: otherDriver.id }),
     ).toThrow(NotFoundException);
     expect(usage.endDate).toBeNull();
+  });
+
+  it('prevents deleting an in-use car or driver until the usage is finished', () => {
+    const car = createCar();
+    const driver = createDriver();
+    service.create({
+      carId: car.id,
+      driverId: driver.id,
+      reason: 'Business trip',
+    });
+
+    expect(() => carsService.remove(car.id)).toThrow(ConflictException);
+    expect(() => driversService.remove(driver.id)).toThrow(ConflictException);
+
+    service.finish({ carId: car.id, driverId: driver.id });
+
+    expect(() => carsService.remove(car.id)).not.toThrow();
+    expect(() => driversService.remove(driver.id)).not.toThrow();
+  });
+
+  it('preserves historical usage details after deleting the car and driver', () => {
+    const car = createCar();
+    const driver = createDriver();
+    const usage = service.create({
+      carId: car.id,
+      driverId: driver.id,
+      reason: 'Business trip',
+    });
+    service.finish({ carId: car.id, driverId: driver.id });
+
+    carsService.remove(car.id);
+    driversService.remove(driver.id);
+
+    expect(service.findAll()).toContainEqual(
+      expect.objectContaining({
+        id: usage.id,
+        car: expect.objectContaining({
+          id: car.id,
+          plate: car.plate,
+          color: car.color,
+          brand: car.brand,
+        }),
+        driver: expect.objectContaining({
+          id: driver.id,
+          name: driver.name,
+        }),
+        reason: 'Business trip',
+        startDate: usage.startDate,
+        endDate: usage.endDate,
+      }),
+    );
+    expect(() => carsService.findOne(car.id)).toThrow(NotFoundException);
+    expect(() => driversService.findOne(driver.id)).toThrow(NotFoundException);
   });
 
   it('requires existing car and driver records to start a usage', () => {
